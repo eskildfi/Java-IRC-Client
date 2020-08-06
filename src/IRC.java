@@ -53,19 +53,23 @@ class OutputThread extends Thread {
 		this.pw = pw;
 	}
 	
+	public void sendMsg(String msg) {
+		this.pw.print(msg+"\r\n");
+		this.pw.flush();
+	}
+	
 	public void run() {
 		Scanner scanner = new Scanner(System.in);
 		while(true) {
 			String s = scanner.nextLine();
-			pw.print(s+"\r\n");
-			pw.flush();
+			sendMsg(s);
 		}
 	}
 }
 
 public class IRC {
 	
-	public static void initConnect(byte[] buff, InputStream in, PrintWriter pw) {
+	public static void initConnect(byte[] buff, InputStream in, PrintWriter pw, String nick, String username, String name) {
 		boolean joined = false;
 		int read;
 		while (!joined) {
@@ -77,9 +81,9 @@ public class IRC {
 					System.out.flush();
 					
 					if (output.contains("No Ident response")) {
-						pw.print("NICK javatestaasbsas\r\n");
+						pw.print("NICK " + nick + "\r\n");
 						pw.flush();
-						pw.print("USER javatest eskildfi Server eskildfi\r\n");
+						pw.print("USER " + username + " * * :" + name +"\r\n");
 						pw.flush();
 					}
 					// got motd, we've joined the server
@@ -96,50 +100,41 @@ public class IRC {
 	}
 	
 	public static void main(String[] args) {
+		if (args.length < 5) {
+			System.out.println("Missing args");
+			System.exit(0);;
+		}
+		
 		try {
-			Socket s = new Socket("chat.freenode.net", 6667);
-			//Socket s = new Socket("www.google.com", 80);
+			String server = args[0];
+			int port = Integer.parseInt(args[1]);
+			String nick = args[2];
+			String username = args[3];
+			String name = args[4];
+			
+			Socket s = new Socket(server, port);
 			PrintWriter pw = new PrintWriter(s.getOutputStream());
-			String nick = "NICK javatest";
-			String user = "USER javatest eskildfi Server eskildfi";
-			/*
-			pw.println("GET / HTTP/1.0");
-			pw.println();
-			pw.flush();
-			*/
 			InputStream in = s.getInputStream();
-			Scanner scanner = new Scanner(System.in);
-			String userInput = "";
 			byte[] buff = new byte[1024];
-			int read;
 			System.out.println("Starting");
 			
 			
 
-			initConnect(buff, in, pw);
+			initConnect(buff, in, pw, nick, username, name);
 			InputThread it = new InputThread(new Message(""), in);
 			OutputThread ot = new OutputThread(new Message(""), pw);
 			it.start();
 			ot.start();
-			while (true);
-				
-			
-			
-			/*
 			while (true) {
-				System.out.println("But does it block");
-				read = in.read(buff);
-				if (read > 0) {
-					String output = new String(buff, 0, read);
-					System.out.print(output);
-					System.out.flush();
+				if (it.msg.msg.contains("PING")) {
+					ot.sendMsg("PONG");
 				}
+				
 			}
-			*/
-			//s.close();
+			
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 	}
 }
