@@ -11,7 +11,11 @@ class UserConnection {
 }
 
 class Message {
+// Data class for irc messages. Use both for incoming and outgoing
 	String msg;
+	//String cmd;
+	//int code;
+	
 	
 	public Message(String input) {
 		this.msg = input;
@@ -19,6 +23,7 @@ class Message {
 }
 
 class InputThread extends Thread {
+// Thread that handles the socket inputstream. Handles incoming messages from irc server.
 	Message msg;
 	InputStream in;
 	
@@ -34,6 +39,7 @@ class InputThread extends Thread {
 			try {
 				read = this.in.read(buff);
 				if (read > 0) {
+					// Create a new message for each incoming message so that the main thread can check for and handle specific messages.
 					this.msg = new Message(new String(buff, 0, read));
 					System.out.print(this.msg.msg);
 				}
@@ -45,6 +51,7 @@ class InputThread extends Thread {
 }
 
 class OutputThread extends Thread {
+	// Thread that handles outgoing messages from client.
 	Message msg;
 	PrintWriter pw;
 	
@@ -54,6 +61,7 @@ class OutputThread extends Thread {
 	}
 	
 	public void sendMsg(String msg) {
+		// Should be remade to create a String from a Message object and send it.
 		this.pw.print(msg+"\r\n");
 		this.pw.flush();
 	}
@@ -62,6 +70,7 @@ class OutputThread extends Thread {
 		Scanner scanner = new Scanner(System.in);
 		while(true) {
 			String s = scanner.nextLine();
+			System.out.println(s); // Print off our command. 
 			sendMsg(s);
 		}
 	}
@@ -70,6 +79,7 @@ class OutputThread extends Thread {
 public class IRC {
 	
 	public static void initConnect(byte[] buff, InputStream in, PrintWriter pw, String nick, String username, String name) {
+		// Connect to a server (no specific channel). Run before sending any other messages to the server
 		boolean joined = false;
 		int read;
 		while (!joined) {
